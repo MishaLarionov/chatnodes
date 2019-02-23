@@ -4,20 +4,29 @@ import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.AdvertiseData;
+import android.bluetooth.le.AdvertisingSet;
+import android.bluetooth.le.AdvertisingSetCallback;
+import android.bluetooth.le.AdvertisingSetParameters;
+import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.ParcelUuid;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -26,16 +35,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     final int REQUEST_ENABLE_BT = 1;
     final int REQUEST_LOCATION = 2;
     private BluetoothLeScanner bluetoothLeScanner;
+    private BluetoothLeAdvertiser bluetoothLeAdvertiser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button testButton = findViewById(R.id.test_button);
+        Button scanButton = findViewById(R.id.scan_button);
+        Button broadcastButton = findViewById(R.id.broadcast_button);
         textBoi = findViewById(R.id.textBoi);
 
-        testButton.setOnClickListener(this);
+        scanButton.setOnClickListener(this);
+        broadcastButton.setOnClickListener(this);
 
         //Initialize the bluetooth adapter
         final BluetoothManager bluetoothManager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
@@ -60,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //Initialize the BLE scanner
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
 
+        //Initialize the advertiser
+        bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
     }
 
     @Override
@@ -74,21 +88,66 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void scanBluetooth() {
-        bluetoothLeScanner.startScan(new ScanCallback() {
+        try {
+            bluetoothLeScanner.startScan(new ScanCallback() {
+                @Override
+                public void onScanResult(int callbackType, ScanResult result) {
+                    super.onScanResult(callbackType, result);
+                    BluetoothDevice bluetoothDevice = result.getDevice();
+                    if (bluetoothDevice != null) {
+                        System.out.println("New scan result: " + bluetoothDevice.getAddress());
+                        textBoi.setText(bluetoothDevice.getName());
+                    }
+                }
+            });
+            Toast.makeText(getApplicationContext(), R.string.scan_start, Toast.LENGTH_SHORT).show();
+        } catch (NullPointerException e) {
+            Toast.makeText(getApplicationContext(), R.string.scan_fail, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void broadcastBluetooth() {
+        //Advertising parameters
+        //Minimum API required is 26 (DO NOT CHANGE PROJECT TO BE LOWER THAN THIS)
+        AdvertisingSetParameters.Builder parameters = (new AdvertisingSetParameters.Builder())
+                .setLegacyMode(false)
+                .setInterval(AdvertisingSetParameters.INTERVAL_LOW)
+                .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MEDIUM);
+                //.setPrimaryPhy(BluetoothDevice.PHY_LE_2M)
+                //.setSecondaryPhy(BluetoothDevice.PHY_LE_2M);
+
+        //Data to advertise
+        AdvertiseData data = (new AdvertiseData.Builder().addServiceData(
+                new ParcelUuid(UUID.randomUUID()), "This is data".getBytes()
+        )).build();
+
+        //Callback
+        AdvertisingSetCallback callback = new AdvertisingSetCallback() {
             @Override
-            public void onScanResult(int callbackType, ScanResult result) {
-                super.onScanResult(callbackType, result);
-                BluetoothDevice bluetoothDevice = result.getDevice();
-                textBoi.setText(bluetoothDevice.getName());
+            public void onAdvertisingSetStarted(AdvertisingSet advertisingSet, int txPower, int status) {
+                super.onAdvertisingSetStarted(advertisingSet, txPower, status);
+
             }
-        });
+        };
+
+        //Start advertising
+        bluetoothLeAdvertiser.startAdvertisingSet(parameters.build(), data, null, null, null, callback);
+
+        Toast.makeText(getApplicationContext(), R.string.advertise_start, Toast.LENGTH_SHORT).show();
+
     }
 
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.test_button:
+            case R.id.scan_button:
+                System.out.println("Scan button pressed");
                 scanBluetooth();
+                break;
+            case R.id.broadcast_button:
+                System.out.println("Broadcast button pressed");
+                broadcastBluetooth();
+                break;
         }
     }
 }

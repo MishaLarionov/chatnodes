@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">Chat Nodes</string>
-    <string name="test_button">yeet</string>
+    <string name="scan">Scan</string>
     <string name="bluetooth_enable_success">Bluetooth Enabled</string>
     <string name="bluetooth_enable_fail">Bluetooth Enable Failed</string>
+    <string name="broadcast">Broadcast</string>
+    <string name="scan_fail">Scan Failed</string>
+    <string name="advertise_start">Advertising Started</string>
+    <string name="scan_start">Scan Started</string>
 </resources>
