@@ -53,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private BluetoothGatt connectedGatt;
 
+    private List<BluetoothDevice> connectedDevices;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -129,6 +131,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         connectedGatt.close();
                     }
                 }
+                int[] acceptedStates = {BluetoothProfile.STATE_CONNECTED};
+                connectedDevices = bluetoothManager.getDevicesMatchingConnectionStates(BluetoothProfile.GATT, acceptedStates);
+                System.out.println("Connected Devices:");
+                System.out.println(connectedDevices);
             }
         };
 
