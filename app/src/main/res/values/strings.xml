@@ -7,4 +7,5 @@
     <string name="scan_fail">Scan Failed</string>
     <string name="advertise_start">Advertising Started</string>
     <string name="scan_start">Scan Started</string>
+    <string name="advertise_fail">Advertise Failed</string>
 </resources>

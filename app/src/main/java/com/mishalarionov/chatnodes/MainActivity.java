@@ -3,8 +3,13 @@ package com.mishalarionov.chatnodes;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattServer;
+import android.bluetooth.BluetoothGattServerCallback;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
+import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.AdvertisingSet;
 import android.bluetooth.le.AdvertisingSetCallback;
 import android.bluetooth.le.AdvertisingSetParameters;
@@ -15,6 +20,7 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Parcel;
 import android.os.ParcelUuid;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -34,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BluetoothAdapter bluetoothAdapter;
     final int REQUEST_ENABLE_BT = 1;
     final int REQUEST_LOCATION = 2;
+    private BluetoothManager bluetoothManager;
     private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
 
@@ -50,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         broadcastButton.setOnClickListener(this);
 
         //Initialize the bluetooth adapter
-        final BluetoothManager bluetoothManager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
+        bluetoothManager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
         assert bluetoothManager != null;
         bluetoothAdapter = bluetoothManager.getAdapter();
 
@@ -111,33 +118,78 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void broadcastBluetooth() {
         //Advertising parameters
         //Minimum API required is 26 (DO NOT CHANGE PROJECT TO BE LOWER THAN THIS)
-        AdvertisingSetParameters.Builder parameters = (new AdvertisingSetParameters.Builder())
-                .setLegacyMode(false)
-                .setInterval(AdvertisingSetParameters.INTERVAL_LOW)
-                .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MEDIUM);
-                //.setPrimaryPhy(BluetoothDevice.PHY_LE_2M)
-                //.setSecondaryPhy(BluetoothDevice.PHY_LE_2M);
 
-        int maxLength = bluetoothAdapter.getLeMaximumAdvertisingDataLength();
-
-        System.out.println("Max data length for device: " + Integer.toString(maxLength));
-
-        //Data to advertise (Can exceed maximum for some devices)
-        AdvertiseData data = (new AdvertiseData.Builder().addServiceData(
-                new ParcelUuid(UUID.randomUUID()), "".getBytes()
-        )).setIncludeDeviceName(true).build();
-
-        //Callback
-        AdvertisingSetCallback callback = new AdvertisingSetCallback() {
+        BluetoothGattServerCallback gattServerCallback = new BluetoothGattServerCallback() {
             @Override
-            public void onAdvertisingSetStarted(AdvertisingSet advertisingSet, int txPower, int status) {
-                super.onAdvertisingSetStarted(advertisingSet, txPower, status);
-                Toast.makeText(getApplicationContext(), R.string.advertise_start, Toast.LENGTH_SHORT).show();
+            public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
+                super.onConnectionStateChange(device, status, newState);
             }
         };
 
-        //Start advertising
-        bluetoothLeAdvertiser.startAdvertisingSet(parameters.build(), data, null, null, null, callback);
+        BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(this, gattServerCallback);
+
+        UUID uuid = UUID.randomUUID();
+
+        BluetoothGattService bluetoothGattService = new BluetoothGattService(uuid, BluetoothGattService.SERVICE_TYPE_PRIMARY);
+
+        AdvertiseSettings advertiseSettings = new AdvertiseSettings.Builder()
+                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+                .setConnectable(true)
+                .setTimeout(0)
+                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
+                .build();
+
+        ParcelUuid parcelUuid = new ParcelUuid(uuid);
+
+        AdvertiseData data = new AdvertiseData.Builder()
+                .setIncludeDeviceName(true)
+                .addServiceUuid(parcelUuid)
+                .build();
+
+        AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
+            @Override
+            public void onStartSuccess(AdvertiseSettings settingsInEffect) {
+                super.onStartSuccess(settingsInEffect);
+                Toast.makeText(getApplicationContext(), R.string.advertise_start, Toast.LENGTH_SHORT).show();
+            }
+
+
+        };
+
+        bluetoothLeAdvertiser.startAdvertising(
+                advertiseSettings,
+                data,
+                advertiseCallback
+        );
+
+        //Old code below probably shouldn't touch
+//        AdvertisingSetParameters.Builder parameters = (new AdvertisingSetParameters.Builder())
+//                .setLegacyMode(false)
+//                .setInterval(AdvertisingSetParameters.INTERVAL_LOW)
+//                .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_MEDIUM);
+//                //.setPrimaryPhy(BluetoothDevice.PHY_LE_2M)
+//                //.setSecondaryPhy(BluetoothDevice.PHY_LE_2M);
+//
+//        int maxLength = bluetoothAdapter.getLeMaximumAdvertisingDataLength();
+//
+//        System.out.println("Max data length for device: " + Integer.toString(maxLength));
+//
+//        //Data to advertise (Can exceed maximum for some devices)
+//        AdvertiseData data = (new AdvertiseData.Builder().addServiceData(
+//                new ParcelUuid(UUID.randomUUID()), "".getBytes()
+//        )).setIncludeDeviceName(true).build();
+//
+//        //Callback
+//        AdvertisingSetCallback callback = new AdvertisingSetCallback() {
+//            @Override
+//            public void onAdvertisingSetStarted(AdvertisingSet advertisingSet, int txPower, int status) {
+//                super.onAdvertisingSetStarted(advertisingSet, txPower, status);
+//                Toast.makeText(getApplicationContext(), R.string.advertise_start, Toast.LENGTH_SHORT).show();
+//            }
+//        };
+//
+//        //Start advertising
+//        bluetoothLeAdvertiser.startAdvertisingSet(parameters.build(), data, null, null, null, callback);
 
 
     }
