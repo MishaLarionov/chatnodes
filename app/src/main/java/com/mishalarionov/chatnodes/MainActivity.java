@@ -21,16 +21,19 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -45,11 +48,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
     private UUID serviceUUID;
+    private UUID charUUID;
     private BluetoothGattServer bluetoothGattServer;
     private HashMap<String, BluetoothDevice> results;
 
     private Button scanButton;
     private Button broadcastButton;
+    private Button sendButton;
+    private EditText sendText;
 
     private BluetoothGatt connectedGatt;
 
@@ -63,6 +69,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         textBoi = findViewById(R.id.textBoi);
         scanButton = findViewById(R.id.scan_button);
         broadcastButton = findViewById(R.id.broadcast_button);
+        sendButton = findViewById(R.id.sendyButton);
+        sendText = findViewById(R.id.messageSendyBoi);
 
         scanButton.setOnClickListener(this);
         broadcastButton.setOnClickListener(this);
@@ -88,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //Initialize the UUID so we can have it consistent every time
         serviceUUID = UUID.nameUUIDFromBytes("yeetBoiChat".getBytes());
+        charUUID = UUID.nameUUIDFromBytes("writeyBoi".getBytes());
 
         //Initialize the BLE scanner
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
@@ -114,9 +123,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 super.onConnectionStateChange(gatt, status, newState);
                 if (status == BluetoothGatt.GATT_FAILURE) {
                     System.out.println("Gatt Failed");
-                    if (connectedGatt != null) {
-                        connectedGatt.disconnect();
-                        connectedGatt.close();
+                    if (gatt != null) {
+                        gatt.disconnect();
+                        gatt.close();
                     }
                 } else if (status != BluetoothGatt.GATT_SUCCESS) {
                     System.out.println("Gatt Failed");
@@ -124,17 +133,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                     System.out.println("Gatt Success");
+
+                    //Possible null pointer error but I'll let it happen for debug reasons
+                    gatt.discoverServices();
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     System.out.println("Gatt Disconnected");
-                    if (connectedGatt != null) {
-                        connectedGatt.disconnect();
-                        connectedGatt.close();
+                    if (gatt != null) {
+                        gatt.disconnect();
+                        gatt.close();
                     }
                 }
                 int[] acceptedStates = {BluetoothProfile.STATE_CONNECTED};
                 connectedDevices = bluetoothManager.getDevicesMatchingConnectionStates(BluetoothProfile.GATT, acceptedStates);
                 System.out.println("Connected Devices:");
                 System.out.println(connectedDevices);
+
+            }
+
+            @Override
+            public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+                super.onServicesDiscovered(gatt, status);
+                if (status != BluetoothGatt.GATT_SUCCESS) {
+                    System.out.println("Couldn't discover services");
+                    return;
+                }
+                BluetoothGattService service = gatt.getService(serviceUUID);
+                BluetoothGattCharacteristic characteristic = service.getCharacteristic(charUUID);
+
+                characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                gatt.setCharacteristicNotification(characteristic, true);
+
+            }
+
+
+            @Override
+            public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+                super.onCharacteristicChanged(gatt, characteristic);
+                byte[] messageBytes = characteristic.getValue();
+                String messageString = null;
+
+                messageString = new String(messageBytes, StandardCharsets.UTF_8);
+                textBoi.setText(messageString);
             }
         };
 
@@ -188,20 +227,57 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
                 super.onConnectionStateChange(device, status, newState);
+                int[] acceptedStates = {BluetoothProfile.STATE_CONNECTED};
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                     System.out.println("Device connected");
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     System.out.println("Device disconnected");
                 }
+                connectedDevices = bluetoothManager.getDevicesMatchingConnectionStates(BluetoothProfile.GATT, acceptedStates);
+                System.out.println("Connected Devices:");
+                System.out.println(connectedDevices);
             }
+
+            //Characteristic is something about writing data
+            @Override
+            public void onCharacteristicWriteRequest(
+                    BluetoothDevice device,
+                    int requestId,
+                    BluetoothGattCharacteristic characteristic,
+                    boolean preparedWrite,
+                    boolean responseNeeded,
+                    int offset,
+                    byte[] value
+            ) {
+                super.onCharacteristicWriteRequest(
+                        device, requestId, characteristic, preparedWrite, responseNeeded, offset, value
+                );
+                if (characteristic.getUuid().equals(charUUID)) {
+                    bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
+                    byte[] yeet = "yeet".getBytes();
+                    characteristic.setValue(yeet);
+                    for (BluetoothDevice bDevice : connectedDevices) {
+                        bluetoothGattServer.notifyCharacteristicChanged(device, characteristic, false);
+                    }
+                }
+            }
+
         };
 
         //Initialize a bunch of garbage
         bluetoothGattServer = bluetoothManager.openGattServer(this, gattServerCallback);
 
-        BluetoothGattService bluetoothGattService = new BluetoothGattService(serviceUUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        BluetoothGattService service = new BluetoothGattService(serviceUUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
-        bluetoothGattServer.addService(bluetoothGattService);
+        BluetoothGattCharacteristic writeCharacteristic = new BluetoothGattCharacteristic(
+                charUUID,
+                BluetoothGattCharacteristic.PROPERTY_WRITE,
+                BluetoothGattCharacteristic.PERMISSION_WRITE
+        );
+
+        service.addCharacteristic(writeCharacteristic);
+
+        bluetoothGattServer.addService(service);
 
         //Make the settings
         AdvertiseSettings advertiseSettings = new AdvertiseSettings.Builder()
@@ -246,6 +322,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 data,
                 advertiseCallback
         );
+    }
+
+    private void sendMessage() {
+        BluetoothGattService service = connectedGatt.getService(serviceUUID);
+        BluetoothGattCharacteristic characteristic = service.getCharacteristic(charUUID);
+        String message = sendText.getText().toString();
+        byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
+        characteristic.setValue(messageBytes);
+        boolean success = connectedGatt.writeCharacteristic(characteristic);
     }
 
     @Override
