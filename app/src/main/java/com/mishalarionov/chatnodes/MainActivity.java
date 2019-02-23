@@ -346,6 +346,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 System.out.println("Broadcast button pressed");
                 broadcastBluetooth();
                 break;
+            case R.id.sendyButton:
+                System.out.println("Send button pressed");
+                sendMessage();
+                break;
         }
     }
 }
