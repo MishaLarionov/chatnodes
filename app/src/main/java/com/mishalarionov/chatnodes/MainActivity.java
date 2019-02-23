@@ -74,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         scanButton.setOnClickListener(this);
         broadcastButton.setOnClickListener(this);
+        sendButton.setOnClickListener(this);
 
         //Initialize the bluetooth adapter
         bluetoothManager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
@@ -170,9 +171,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                 super.onCharacteristicChanged(gatt, characteristic);
                 byte[] messageBytes = characteristic.getValue();
-                String messageString = null;
+                String messageString = new String(messageBytes, StandardCharsets.UTF_8);
 
-                messageString = new String(messageBytes, StandardCharsets.UTF_8);
                 textBoi.setText(messageString);
             }
         };
@@ -331,6 +331,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
         characteristic.setValue(messageBytes);
         boolean success = connectedGatt.writeCharacteristic(characteristic);
+        System.out.println("Success?" + Boolean.toString(success));
     }
 
     @Override
@@ -347,6 +348,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 broadcastBluetooth();
                 break;
             case R.id.sendyButton:
+                sendText.setText("");
                 System.out.println("Send button pressed");
                 sendMessage();
                 break;
