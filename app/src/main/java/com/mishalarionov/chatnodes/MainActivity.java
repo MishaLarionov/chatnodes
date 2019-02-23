@@ -259,13 +259,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                              boolean responseNeeded,
                                              int offset,
                                              byte[] value) {
-        //super.onCharacteristicWriteRequest(device,
+        /*super.onCharacteristicWriteRequest(device,
                 requestId,
                 characteristic,
                 preparedWrite,
                 responseNeeded,
                 offset,
-                value);
+                value);*/
         if (characteristic.getUuid().equals(serviceUUID)) {
             bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
         }
