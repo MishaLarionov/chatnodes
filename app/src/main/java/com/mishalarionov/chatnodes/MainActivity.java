@@ -96,7 +96,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     BluetoothDevice bluetoothDevice = result.getDevice();
                     if (bluetoothDevice != null) {
                         System.out.println("New scan result: " + bluetoothDevice.getAddress());
-                        textBoi.setText(bluetoothDevice.getName());
+                        if (bluetoothDevice.getName() != null) {
+                            textBoi.setText(bluetoothDevice.getName());
+                        }
                     }
                 }
             });
@@ -116,24 +118,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 //.setPrimaryPhy(BluetoothDevice.PHY_LE_2M)
                 //.setSecondaryPhy(BluetoothDevice.PHY_LE_2M);
 
-        //Data to advertise
+        int maxLength = bluetoothAdapter.getLeMaximumAdvertisingDataLength();
+
+        System.out.println("Max data length for device: " + Integer.toString(maxLength));
+
+        //Data to advertise (Can exceed maximum for some devices)
         AdvertiseData data = (new AdvertiseData.Builder().addServiceData(
-                new ParcelUuid(UUID.randomUUID()), "This is data".getBytes()
-        )).build();
+                new ParcelUuid(UUID.randomUUID()), "".getBytes()
+        )).setIncludeDeviceName(true).build();
 
         //Callback
         AdvertisingSetCallback callback = new AdvertisingSetCallback() {
             @Override
             public void onAdvertisingSetStarted(AdvertisingSet advertisingSet, int txPower, int status) {
                 super.onAdvertisingSetStarted(advertisingSet, txPower, status);
-
+                Toast.makeText(getApplicationContext(), R.string.advertise_start, Toast.LENGTH_SHORT).show();
             }
         };
 
         //Start advertising
         bluetoothLeAdvertiser.startAdvertisingSet(parameters.build(), data, null, null, null, callback);
 
-        Toast.makeText(getApplicationContext(), R.string.advertise_start, Toast.LENGTH_SHORT).show();
 
     }
 
