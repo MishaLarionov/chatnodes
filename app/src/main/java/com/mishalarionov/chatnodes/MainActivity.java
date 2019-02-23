@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         System.out.println("New scan result: " + bluetoothDevice.getAddress());
                         if (result.getScanRecord() != null) {
                             List<ParcelUuid> resultServiceUUIDs = result.getScanRecord().getServiceUuids();
-                            if (resultServiceUUIDs != null && resultServiceUUIDs.size() == 1 && resultServiceUUIDs.get(0) ==  new ParcelUuid(serviceUUID)) {
+                            if (resultServiceUUIDs != null  && resultServiceUUIDs.get(0).equals(new ParcelUuid(serviceUUID))) {
                                 textBoi.setText("Device on the system detected!!!!!!!!!");
                             }
                         }
