@@ -12,9 +12,6 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
-import android.bluetooth.le.AdvertisingSet;
-import android.bluetooth.le.AdvertisingSetCallback;
-import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -22,13 +19,11 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Parcel;
 import android.os.ParcelUuid;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -49,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
     private UUID serviceUUID;
     private BluetoothGattServer bluetoothGattServer;
+    private HashMap<String, BluetoothDevice> results;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void scanBluetooth() {
         try {
+            results = new HashMap<String, BluetoothDevice>();
             bluetoothLeScanner.startScan(new ScanCallback() {
                 @Override
                 public void onScanResult(int callbackType, ScanResult result) {
@@ -112,14 +109,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     //Get the scan result, eventually getting service UUID
                     if (bluetoothDevice != null) {
                         System.out.println("New scan result: " + bluetoothDevice.getAddress());
+
                         if (result.getScanRecord() != null) {
                             List<ParcelUuid> resultServiceUUIDs = result.getScanRecord().getServiceUuids();
                             //Check to see if the service UUID matches ours todo rewrite with ScanFilter
                             if (resultServiceUUIDs != null  && resultServiceUUIDs.get(0).equals(new ParcelUuid(serviceUUID))) {
                                 textBoi.setText("Device on the system detected!!!!!!!!!");
+                                addScanResult(result);
+//                                textBoi.setText(results.toString());
                             }
                         }
                     }
+                }
+
+                private void addScanResult(ScanResult result) {
+                    BluetoothDevice device = result.getDevice();
+                    String deviceAddress = device.getAddress();
+                    results.put(deviceAddress, device);
                 }
             });
             Toast.makeText(getApplicationContext(), R.string.scan_start, Toast.LENGTH_SHORT).show();
@@ -278,4 +284,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
     }
+
+
 }
