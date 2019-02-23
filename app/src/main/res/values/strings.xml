@@ -13,4 +13,5 @@
     <string name="gatt_disconnect">Gatt Disconnected</string>
     <string name="device_connected">New Device Connected</string>
     <string name="device_disconnect">Device Disconnected</string>
+    <string name="send">Send</string>
 </resources>
