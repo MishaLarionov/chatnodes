@@ -32,6 +32,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.List;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BluetoothManager bluetoothManager;
     private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
+    private UUID serviceUUID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +77,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
         }
 
+        //Initialize the UUID so we can have it consistent every time
+        serviceUUID = UUID.nameUUIDFromBytes("yeetBoiChat".getBytes());
+
 
         //Initialize the BLE scanner
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
@@ -103,8 +108,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     BluetoothDevice bluetoothDevice = result.getDevice();
                     if (bluetoothDevice != null) {
                         System.out.println("New scan result: " + bluetoothDevice.getAddress());
-                        if (bluetoothDevice.getName() != null) {
-                            textBoi.setText(bluetoothDevice.getName());
+                        if (result.getScanRecord() != null) {
+                            List<ParcelUuid> resultServiceUUIDs = result.getScanRecord().getServiceUuids();
+                            if (resultServiceUUIDs != null && resultServiceUUIDs.size() == 1 && resultServiceUUIDs.get(0) ==  new ParcelUuid(serviceUUID)) {
+                                textBoi.setText("Device on the system detected!!!!!!!!!");
+                            }
                         }
                     }
                 }
@@ -128,9 +136,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(this, gattServerCallback);
 
-        UUID uuid = UUID.randomUUID();
+        BluetoothGattService bluetoothGattService = new BluetoothGattService(serviceUUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
-        BluetoothGattService bluetoothGattService = new BluetoothGattService(uuid, BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        bluetoothGattServer.addService(bluetoothGattService);
 
         AdvertiseSettings advertiseSettings = new AdvertiseSettings.Builder()
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
@@ -139,11 +147,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
                 .build();
 
-        ParcelUuid parcelUuid = new ParcelUuid(uuid);
+        ParcelUuid parcelUuid = new ParcelUuid(serviceUUID);
+
+        int maxLength = bluetoothAdapter.getLeMaximumAdvertisingDataLength();
+
+        System.out.println("Max data length for device: " + Integer.toString(maxLength));
 
         AdvertiseData data = new AdvertiseData.Builder()
-                .setIncludeDeviceName(true)
                 .addServiceUuid(parcelUuid)
+                .setIncludeDeviceName(false)
+                .setIncludeTxPowerLevel(false)
                 .build();
 
         AdvertiseCallback advertiseCallback = new AdvertiseCallback() {
@@ -153,6 +166,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Toast.makeText(getApplicationContext(), R.string.advertise_start, Toast.LENGTH_SHORT).show();
             }
 
+            @Override
+            public void onStartFailure(int errorCode) {
+                Toast.makeText(getApplicationContext(), R.string.advertise_fail, Toast.LENGTH_SHORT).show();
+                System.out.println("Start advertise failed. Error code: " + Integer.toString(errorCode));
+            }
 
         };
 
