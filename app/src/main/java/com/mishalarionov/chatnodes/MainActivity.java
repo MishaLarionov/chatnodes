@@ -3,6 +3,8 @@ package com.mishalarionov.chatnodes;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
@@ -32,6 +34,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
     private UUID serviceUUID;
+    private BluetoothGattServer bluetoothGattServer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,7 +83,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //Initialize the UUID so we can have it consistent every time
         serviceUUID = UUID.nameUUIDFromBytes("yeetBoiChat".getBytes());
-
 
         //Initialize the BLE scanner
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
@@ -133,11 +136,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
                 super.onConnectionStateChange(device, status, newState);
+                mConnected = true;
+                gatt.discoverServices();
             }
         };
 
         //Initialize a bunch of garbage
-        BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(this, gattServerCallback);
+        bluetoothGattServer = bluetoothManager.openGattServer(this, gattServerCallback);
 
         BluetoothGattService bluetoothGattService = new BluetoothGattService(serviceUUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
@@ -148,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
                 .setConnectable(true)
                 .setTimeout(0)
-                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
+                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM) //Todo: Change to max to gain more range
                 .build();
 
         ParcelUuid parcelUuid = new ParcelUuid(serviceUUID);
@@ -217,6 +222,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        bluetoothLeAdvertiser.startAdvertisingSet(parameters.build(), data, null, null, null, callback);
 
 
+    }
+
+    private void setupServer() {
+        BluetoothGattService service = new BluetoothGattService(serviceUUID,
+                BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        BluetoothGattCharacteristic writeCharacteristic = new BluetoothGattCharacteristic(
+                serviceUUID,
+                BluetoothGattCharacteristic.PROPERTY_WRITE,
+                BluetoothGattCharacteristic.PERMISSION_WRITE);
+        service.addCharacteristic(writeCharacteristic);
+        bluetoothGattServer.addService(service);
+    }
+
+    public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+        //super.onServicesDiscovered(gatt, status);
+        if (status != BluetoothGatt.GATT_SUCCESS) {
+            return;
+        }
+        BluetoothGattService service = gatt.getService(serviceUUID);
+        BluetoothGattCharacteristic characteristic = service.getCharacteristic(serviceUUID);
+        characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+        boolean mInitialized = gatt.setCharacteristicNotification(characteristic, true);
+    }
+
+    public void onCharacteristicWriteRequest(BluetoothDevice device,
+                                             int requestId,
+                                             BluetoothGattCharacteristic characteristic,
+                                             boolean preparedWrite,
+                                             boolean responseNeeded,
+                                             int offset,
+                                             byte[] value) {
+        //super.onCharacteristicWriteRequest(device,
+                requestId,
+                characteristic,
+                preparedWrite,
+                responseNeeded,
+                offset,
+                value);
+        if (characteristic.getUuid().equals(serviceUUID)) {
+            bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
+        }
     }
 
     @Override
