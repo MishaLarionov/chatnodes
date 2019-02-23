@@ -106,10 +106,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void onScanResult(int callbackType, ScanResult result) {
                     super.onScanResult(callbackType, result);
                     BluetoothDevice bluetoothDevice = result.getDevice();
+                    //Get the scan result, eventually getting service UUID
                     if (bluetoothDevice != null) {
                         System.out.println("New scan result: " + bluetoothDevice.getAddress());
                         if (result.getScanRecord() != null) {
                             List<ParcelUuid> resultServiceUUIDs = result.getScanRecord().getServiceUuids();
+                            //Check to see if the service UUID matches ours todo rewrite with ScanFilter
                             if (resultServiceUUIDs != null  && resultServiceUUIDs.get(0).equals(new ParcelUuid(serviceUUID))) {
                                 textBoi.setText("Device on the system detected!!!!!!!!!");
                             }
@@ -134,12 +136,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         };
 
+        //Initialize a bunch of garbage
         BluetoothGattServer bluetoothGattServer = bluetoothManager.openGattServer(this, gattServerCallback);
 
         BluetoothGattService bluetoothGattService = new BluetoothGattService(serviceUUID, BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
         bluetoothGattServer.addService(bluetoothGattService);
 
+        //Make the settings
         AdvertiseSettings advertiseSettings = new AdvertiseSettings.Builder()
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
                 .setConnectable(true)
@@ -153,6 +157,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         System.out.println("Max data length for device: " + Integer.toString(maxLength));
 
+        //Create the data
+        //Due to the limit on data for some devices, all we transmit is UUID
+        //We'll send more data once we start a GATT server
         AdvertiseData data = new AdvertiseData.Builder()
                 .addServiceUuid(parcelUuid)
                 .setIncludeDeviceName(false)
