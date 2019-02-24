@@ -32,7 +32,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +56,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button sendButton;
     private EditText sendText;
 
+    private MessageHandler messageHandler;
+
     private BluetoothGatt connectedGatt;
 
     private List<BluetoothDevice> connectedDevices;
@@ -71,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         broadcastButton = findViewById(R.id.broadcast_button);
         sendButton = findViewById(R.id.sendyButton);
         sendText = findViewById(R.id.messageSendyBoi);
+
+        messageHandler = new MessageHandler(textBoi);
 
         scanButton.setOnClickListener(this);
         broadcastButton.setOnClickListener(this);
@@ -173,7 +176,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 byte[] messageBytes = characteristic.getValue();
                 String messageString = new String(messageBytes, StandardCharsets.UTF_8);
 
-                textBoi.setText(messageString);
+                System.out.println("Got message: " + messageString);
+                messageHandler.setLatestMessage(messageString);
             }
         };
 
@@ -254,7 +258,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 );
                 if (characteristic.getUuid().equals(charUUID)) {
                     bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
-                    byte[] yeet = "yeet".getBytes();
+                    messageHandler.setLatestMessage("waht the fuck");
+                    byte[] yeet = "goteem".getBytes();
                     characteristic.setValue(yeet);
                     for (BluetoothDevice bDevice : connectedDevices) {
                         bluetoothGattServer.notifyCharacteristicChanged(device, characteristic, false);
