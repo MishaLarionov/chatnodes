@@ -23,9 +23,14 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.ParcelUuid;
+import android.support.annotation.NonNull;
+import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -66,6 +71,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Fragment manager
+        final FragmentManager fragmentManager = getSupportFragmentManager();
+
+        // define your fragments here
+        //final Fragment fragment1 = new FirstFragment();
+        //final Fragment fragment2 = new SecondFragment();
+        //final Fragment fragment3 = new ThirdFragment();
+
+        // Text and buttons
         textBoi = findViewById(R.id.textBoi);
         scanButton = findViewById(R.id.scan_button);
         broadcastButton = findViewById(R.id.broadcast_button);
@@ -74,6 +88,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         scanButton.setOnClickListener(this);
         broadcastButton.setOnClickListener(this);
+
+        //Bottom navigation bar
+        BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                Fragment fragment;
+                switch (item.getItemId()) {
+                    case R.id.private_message:
+                        //fragment = fragment1;
+                        return true;
+                    case R.id.home:
+                        //fragment = fragment2;
+                        return true;
+                    case R.id.group_message:
+                        //fragment = fragment3;
+                        return true;
+                }
+                //fragmentManager.beginTransaction().replace(R.id.flContainer, fragment).commit();
+                return true;
+            }
+        });
+        // Set default selection
+        bottomNavigationView.setSelectedItemId(R.id.home);
 
         //Initialize the bluetooth adapter
         bluetoothManager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
