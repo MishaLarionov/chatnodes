@@ -10,6 +10,11 @@ public class Message {
     public Message(String text, String address, boolean ownMessage){
         this.text= text;
         this.name = text.substring(0,3);
+        if (this.name.equals("Pro")) {
+            this.name = "Misha";
+        } else if (this.name.equals("sca")) {
+            this.name = "Dora";
+        }
         this.message = text.substring(3);
         this.address = address;
         this.ownMessage = ownMessage;
