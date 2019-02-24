@@ -252,7 +252,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                                 bluetoothLeScanner.stopScan(new ScanCallback() {});
 
-                                connectedGatts.add(connectDevice(bluetoothDevice));
+                                boolean connectionExists = false;
+
+                                for (BluetoothGatt gatt : connectedGatts) {
+                                    if (gatt.getDevice().equals(bluetoothDevice)) {
+                                        connectionExists = true;
+                                        gatt.connect();
+                                    }
+                                }
+
+                                if (!connectionExists) {
+                                    connectedGatts.add(connectDevice(bluetoothDevice));
+                                }
+
+                                System.out.println("Connected gatts: " + Integer.toString(connectedGatts.size()));
+
 //                              textBoi.setText(results.toString());
                             }
                         }
@@ -299,7 +313,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     boolean preparedWrite,
                     boolean responseNeeded,
                     final int offset,
-                    byte[] value
+                    final byte[] value
             ) {
                 super.onCharacteristicWriteRequest(
                         device, requestId, characteristic, preparedWrite, responseNeeded, offset, value
@@ -309,11 +323,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
 
-                    System.out.println(characteristic.getStringValue(offset));
+                    System.out.println(new String(value, StandardCharsets.UTF_8));
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
-                            textBoi.setText(characteristic.getStringValue(offset));
+                            textBoi.setText(new String(value, StandardCharsets.UTF_8));
                         }
                     });
                     bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
