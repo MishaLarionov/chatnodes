@@ -458,7 +458,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (view.getId()) {
             case R.id.sendyButton:
                 System.out.println("Send button pressed");
-                if (sendText.getText().toString().equals("")) {
+                if (!sendText.getText().toString().equals("")) {
                     sendMessage(sendText.getText().toString());
                 }
                 sendText.setText("");
