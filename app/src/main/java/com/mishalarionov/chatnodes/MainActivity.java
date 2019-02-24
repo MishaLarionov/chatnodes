@@ -256,7 +256,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             if (resultServiceUUIDs != null  && resultServiceUUIDs.get(0).equals(new ParcelUuid(serviceUUID))) {
                                 addScanResult(result);
 
-                                bluetoothLeScanner.stopScan(new ScanCallback() {});
+//                                bluetoothLeScanner.stopScan(new ScanCallback() {});
 
                                 boolean connectionExists = false;
 
