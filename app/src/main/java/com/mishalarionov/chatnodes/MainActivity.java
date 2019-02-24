@@ -150,6 +150,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //Initialize the advertiser
         bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
+
+        //Start Bluetooth everything
+        scanBluetooth();
+        broadcastBluetooth();
     }
 
     @Override
@@ -322,21 +326,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     final String message = new String(value, StandardCharsets.UTF_8);
 
+                    final String address = device.getAddress().toString();
+
                     System.out.println("WE GOT A MESSAGE AAA");
                     System.out.println(message);
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
                             //Handle messages here
-                            textBoi.setText(message);
+                            textBoi.setText(address + " : " +  message);
                         }
                     });
                     bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
-//                    byte[] yeet = "goteem".getBytes();
-//                    characteristic.setValue(yeet);
-//                    for (BluetoothDevice bDevice : connectedDevices) {
-//                        bluetoothGattServer.notifyCharacteristicChanged(device, characteristic, false);
-//                    }
+                    byte[] yeet = value;
+                    characteristic.setValue(yeet);
+                    for (BluetoothDevice bDevice : connectedDevices) {
+                        bluetoothGattServer.notifyCharacteristicChanged(device, characteristic, false);
+                    }
                 }
             }
 
@@ -429,12 +435,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.scan_button:
                 scanButton.setEnabled(false);
                 System.out.println("Scan button pressed");
-                scanBluetooth();
+                //scanBluetooth();
                 break;
             case R.id.broadcast_button:
                 broadcastButton.setEnabled(false);
                 System.out.println("Broadcast button pressed");
-                broadcastBluetooth();
+                //broadcastBluetooth();
                 break;
             case R.id.sendyButton:
                 System.out.println("Send button pressed");
