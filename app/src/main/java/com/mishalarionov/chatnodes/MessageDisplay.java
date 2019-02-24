@@ -50,6 +50,10 @@ public class MessageDisplay extends BaseAdapter {
         if (message.ownMessage) {
             convertView = messageInflater.inflate(R.layout.my_message, null);
             holder.messageBody = (TextView) convertView.findViewById(R.id.message_body);
+            holder.timestamp = (TextView) convertView.findViewById(R.id.timestamp);
+            String ts = new Timestamp(System.currentTimeMillis()).toString();
+
+            holder.timestamp.setText(ts.substring(0, ts.length()-7));
             convertView.setTag(holder);
             holder.messageBody.setText(message.message);
         } else { // this message was sent by someone else so let's create an advanced chat bubble on the left

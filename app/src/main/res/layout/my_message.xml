@@ -20,4 +20,13 @@
         android:text="Your message"
         />
 
+    <TextView
+        android:id="@+id/timestamp"
+        android:layout_marginLeft="15dp"
+        android:layout_below="@id/message_body"
+        android:layout_alignRight="@id/message_body"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="4dp"
+        android:text="2019-02-24 13:31"/>
 </RelativeLayout>
