@@ -14,6 +14,7 @@
     <string name="device_connected">New Device Connected</string>
     <string name="device_disconnect">Device Disconnected</string>
     <string name="send">Send</string>
+    <string name="input_placeholder">Type a message...</string>
 
     <!-- Bottom navigation -->
     <string name="title_private">Private Message</string>
