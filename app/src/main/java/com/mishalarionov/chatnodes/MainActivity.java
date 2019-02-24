@@ -40,13 +40,13 @@ import android.widget.Toast;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    //Declare a bunch of crap
     private TextView textBoi;
     private BluetoothAdapter bluetoothAdapter;
     final int REQUEST_ENABLE_BT = 1;
@@ -254,6 +254,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                                 boolean connectionExists = false;
 
+                                //Prevent duplicate devices
                                 for (BluetoothGatt gatt : connectedGatts) {
                                     if (gatt.getDevice().equals(bluetoothDevice)) {
                                         connectionExists = true;
@@ -319,15 +320,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         device, requestId, characteristic, preparedWrite, responseNeeded, offset, value
                 );
                 if (characteristic.getUuid().equals(charUUID)) {
+
+                    final String message = new String(value, StandardCharsets.UTF_8);
+
                     System.out.println("WE GOT A MESSAGE AAA");
-
-
-
-                    System.out.println(new String(value, StandardCharsets.UTF_8));
+                    System.out.println(message);
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
-                            textBoi.setText(new String(value, StandardCharsets.UTF_8));
+                            //Handle messages here
+                            textBoi.setText(message);
                         }
                     });
                     bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
@@ -401,7 +403,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         );
     }
 
-    private void sendMessage() {
+    private void sendMessage(String message) {
         for (BluetoothGatt connectedGatt : connectedGatts) {
             System.out.println("Services gotten: ");
             System.out.println(connectedGatt.getServices());
@@ -409,7 +411,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             BluetoothGattService service = connectedGatt.getService(serviceUUID);
             if (service != null) {
                 BluetoothGattCharacteristic characteristic = service.getCharacteristic(charUUID);
-                String message = sendText.getText().toString();
                 System.out.println("Sending message: " + message);
                 byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
                 characteristic.setValue(messageBytes);
@@ -438,7 +439,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.sendyButton:
                 System.out.println("Send button pressed");
-                sendMessage();
+                sendMessage(sendText.getText().toString());
+                sendText.setText("");
                 break;
         }
     }
