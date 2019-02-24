@@ -215,7 +215,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 String messageString = new String(messageBytes, StandardCharsets.UTF_8);
 
                 System.out.println("Got message: " + messageString);
-                messageHandler.setLatestMessage(messageString);
+                TextView boiiii = findViewById(R.id.textBoi);
+                boiiii.setText(messageString);
             }
         };
 
