@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,10 +57,13 @@ public class MessageDisplay extends BaseAdapter {
             holder.avatar = (View) convertView.findViewById(R.id.avatar);
             holder.name = (TextView) convertView.findViewById(R.id.name);
             holder.messageBody = (TextView) convertView.findViewById(R.id.message_body);
+            holder.timestamp = (TextView) convertView.findViewById(R.id.timestamp);
             convertView.setTag(holder);
 
             holder.name.setText(message.name);
             holder.messageBody.setText(message.message);
+            String ts = new Timestamp(System.currentTimeMillis()).toString();
+            holder.timestamp.setText(ts.substring(0, ts.length()-7));
             GradientDrawable drawable = (GradientDrawable) holder.avatar.getBackground();
             drawable.setColor(Color.parseColor(message.getColor()));
         }
@@ -73,4 +77,5 @@ class MessageViewHolder {
     public View avatar;
     public TextView name;
     public TextView messageBody;
+    public TextView timestamp;
 }

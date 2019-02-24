@@ -335,8 +335,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     System.out.println("WE GOT A MESSAGE AAA");
                     System.out.println(message);
 
-
-
 //                    Message message1 = new Message(message, device.getAddress(),false);
 //                    System.out.println(device.getAddress()+"1!!");
 
@@ -460,7 +458,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (view.getId()) {
             case R.id.sendyButton:
                 System.out.println("Send button pressed");
-                sendMessage(sendText.getText().toString());
+                if (sendText.getText().toString().equals("")) {
+                    sendMessage(sendText.getText().toString());
+                }
                 sendText.setText("");
                 break;
         }
