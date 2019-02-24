@@ -21,11 +21,12 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.Image;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.NonNull;
-import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -35,6 +36,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,7 +50,7 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     //Declare a bunch of crap
-    private TextView textBoi;
+
     private BluetoothAdapter bluetoothAdapter;
     final int REQUEST_ENABLE_BT = 1;
     final int REQUEST_LOCATION = 2;
@@ -59,12 +62,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BluetoothGattServer bluetoothGattServer;
     private HashMap<String, BluetoothDevice> results;
 
-    private Button scanButton;
-    private Button broadcastButton;
-    private Button sendButton;
+    private ImageButton sendButton;
     private EditText sendText;
 
+    private MessageDisplay md;
+
     private Handler handler;
+
+    private ListView m;
 
     private ArrayList<BluetoothGatt> connectedGatts;
 
@@ -75,6 +80,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        md = new MessageDisplay(this);
+        m = (ListView) findViewById(R.id.messages_view);
+        m.setAdapter(md);
         // Fragment manager
         final FragmentManager fragmentManager = getSupportFragmentManager();
 
@@ -84,43 +92,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //final Fragment fragment3 = new ThirdFragment();
 
         // Text and buttons
-        textBoi = findViewById(R.id.textBoi);
-        scanButton = findViewById(R.id.scan_button);
-        broadcastButton = findViewById(R.id.broadcast_button);
-        sendButton = findViewById(R.id.sendyButton);
+         sendButton = findViewById(R.id.sendyButton);
         sendText = findViewById(R.id.messageSendyBoi);
 
-        scanButton.setOnClickListener(this);
-        broadcastButton.setOnClickListener(this);
         sendButton.setOnClickListener(this);
 
         connectedGatts = new ArrayList<>();
 
         handler = new Handler();
 
-        //Bottom navigation bar
-        BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                Fragment fragment;
-                switch (item.getItemId()) {
-                    case R.id.private_message:
-                        //fragment = fragment1;
-                        return true;
-                    case R.id.home:
-                        //fragment = fragment2;
-                        return true;
-                    case R.id.group_message:
-                        //fragment = fragment3;
-                        return true;
-                }
-                //fragmentManager.beginTransaction().replace(R.id.flContainer, fragment).commit();
-                return true;
-            }
-        });
-        // Set default selection
-        bottomNavigationView.setSelectedItemId(R.id.home);
+//        //Bottom navigation bar
+//        BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation);
+//        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+//            @Override
+//            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+//                Fragment fragment;
+//                switch (item.getItemId()) {
+//                    case R.id.private_message:
+//                        //fragment = fragment1;
+//                        return true;
+//                    case R.id.home:
+//                        //fragment = fragment2;
+//                        return true;
+//                    case R.id.group_message:
+//                        //fragment = fragment3;
+//                        return true;
+//                }
+//                //fragmentManager.beginTransaction().replace(R.id.flContainer, fragment).commit();
+//                return true;
+//            }
+//        });
+//        // Set default selection
+//        bottomNavigationView.setSelectedItemId(R.id.home);
 
         //Initialize the bluetooth adapter
         bluetoothManager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
@@ -270,8 +273,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 }
 
                                 System.out.println("Connected gatts: " + Integer.toString(connectedGatts.size()));
-
-//                              textBoi.setText(results.toString());
                             }
                         }
                     }
@@ -330,11 +331,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     System.out.println("WE GOT A MESSAGE AAA");
                     System.out.println(message);
+
+
+
+//                    Message message1 = new Message(message, device.getAddress(),false);
+//                    System.out.println(device.getAddress()+"1!!");
+
+                    final String selfAddress = bluetoothAdapter.getAddress();
+
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
                             //Handle messages here
-                            textBoi.setText(address + " : " +  message);
+
+                             System.out.println(selfAddress + "2380uo38u402340230\n\n\n\n\n\n" + address);
+                            if(!selfAddress.equals(address)) {
+                                md.addMessage(new Message(message, address, false));
+                            }
                         }
                     });
                     bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
@@ -423,25 +436,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 boolean success = connectedGatt.writeCharacteristic(characteristic);
 
                 System.out.println("Success?" + Boolean.toString(success));
+
+
             } else {
                 System.out.println("Service is null!!!!");
             }
         }
+        md.addMessage(new Message(message,"na",true));
     }
 
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.scan_button:
-                scanButton.setEnabled(false);
-                System.out.println("Scan button pressed");
-                //scanBluetooth();
-                break;
-            case R.id.broadcast_button:
-                broadcastButton.setEnabled(false);
-                System.out.println("Broadcast button pressed");
-                //broadcastBluetooth();
-                break;
             case R.id.sendyButton:
                 System.out.println("Send button pressed");
                 sendMessage(sendText.getText().toString());
@@ -449,4 +455,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
     }
+
 }
