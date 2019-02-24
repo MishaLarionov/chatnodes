@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.ParcelUuid;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -39,6 +40,7 @@ import android.widget.Toast;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -61,6 +63,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button broadcastButton;
     private Button sendButton;
     private EditText sendText;
+
+    private Handler handler;
 
     private ArrayList<BluetoothGatt> connectedGatts;
 
@@ -91,6 +95,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         sendButton.setOnClickListener(this);
 
         connectedGatts = new ArrayList<>();
+
+        handler = new Handler();
 
         //Bottom navigation bar
         BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation);
@@ -289,23 +295,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onCharacteristicWriteRequest(
                     BluetoothDevice device,
                     int requestId,
-                    BluetoothGattCharacteristic characteristic,
+                    final BluetoothGattCharacteristic characteristic,
                     boolean preparedWrite,
                     boolean responseNeeded,
-                    int offset,
+                    final int offset,
                     byte[] value
             ) {
                 super.onCharacteristicWriteRequest(
                         device, requestId, characteristic, preparedWrite, responseNeeded, offset, value
                 );
                 if (characteristic.getUuid().equals(charUUID)) {
-                    bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
-                    byte[] yeet = "goteem".getBytes();
-                    characteristic.setValue(yeet);
                     System.out.println("WE GOT A MESSAGE AAA");
-                    for (BluetoothDevice bDevice : connectedDevices) {
-                        bluetoothGattServer.notifyCharacteristicChanged(device, characteristic, false);
-                    }
+
+
+
+                    System.out.println(characteristic.getStringValue(offset));
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            textBoi.setText(characteristic.getStringValue(offset));
+                        }
+                    });
+                    bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
+//                    byte[] yeet = "goteem".getBytes();
+//                    characteristic.setValue(yeet);
+//                    for (BluetoothDevice bDevice : connectedDevices) {
+//                        bluetoothGattServer.notifyCharacteristicChanged(device, characteristic, false);
+//                    }
                 }
             }
 
@@ -380,11 +396,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (service != null) {
                 BluetoothGattCharacteristic characteristic = service.getCharacteristic(charUUID);
                 String message = sendText.getText().toString();
+                System.out.println("Sending message: " + message);
                 byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
                 characteristic.setValue(messageBytes);
 
-
                 boolean success = connectedGatt.writeCharacteristic(characteristic);
+
                 System.out.println("Success?" + Boolean.toString(success));
             } else {
                 System.out.println("Service is null!!!!");
@@ -406,7 +423,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 broadcastBluetooth();
                 break;
             case R.id.sendyButton:
-                sendText.setText("");
                 System.out.println("Send button pressed");
                 sendMessage();
                 break;
