@@ -37,7 +37,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -61,6 +60,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button broadcastButton;
     private Button sendButton;
     private EditText sendText;
+
+    private MessageHandler messageHandler;
 
     private BluetoothGatt connectedGatt;
 
@@ -86,8 +87,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         sendButton = findViewById(R.id.sendyButton);
         sendText = findViewById(R.id.messageSendyBoi);
 
+        messageHandler = new MessageHandler(textBoi);
+
         scanButton.setOnClickListener(this);
         broadcastButton.setOnClickListener(this);
+        sendButton.setOnClickListener(this);
 
         //Bottom navigation bar
         BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation);
@@ -208,10 +212,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                 super.onCharacteristicChanged(gatt, characteristic);
                 byte[] messageBytes = characteristic.getValue();
-                String messageString = null;
+                String messageString = new String(messageBytes, StandardCharsets.UTF_8);
 
-                messageString = new String(messageBytes, StandardCharsets.UTF_8);
-                textBoi.setText(messageString);
+                System.out.println("Got message: " + messageString);
+                messageHandler.setLatestMessage(messageString);
             }
         };
 
@@ -292,7 +296,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 );
                 if (characteristic.getUuid().equals(charUUID)) {
                     bluetoothGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
-                    byte[] yeet = "yeet".getBytes();
+                    messageHandler.setLatestMessage("waht the fuck");
+                    byte[] yeet = "goteem".getBytes();
                     characteristic.setValue(yeet);
                     for (BluetoothDevice bDevice : connectedDevices) {
                         bluetoothGattServer.notifyCharacteristicChanged(device, characteristic, false);
@@ -369,6 +374,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
         characteristic.setValue(messageBytes);
         boolean success = connectedGatt.writeCharacteristic(characteristic);
+        System.out.println("Success?" + Boolean.toString(success));
     }
 
     @Override
@@ -385,6 +391,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 broadcastBluetooth();
                 break;
             case R.id.sendyButton:
+                sendText.setText("");
                 System.out.println("Send button pressed");
                 sendMessage();
                 break;
