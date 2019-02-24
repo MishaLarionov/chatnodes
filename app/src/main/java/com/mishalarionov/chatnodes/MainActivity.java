@@ -62,6 +62,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BluetoothGattServer bluetoothGattServer;
     private HashMap<String, BluetoothDevice> results;
 
+    int maxLength ;
+
     private ImageButton sendButton;
     private EditText sendText;
 
@@ -77,6 +79,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -129,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         bluetoothManager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
         assert bluetoothManager != null;
         bluetoothAdapter = bluetoothManager.getAdapter();
-
+        maxLength= bluetoothAdapter.getLeMaximumAdvertisingDataLength();
         //Enable bluetooth if it isn't already
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -338,7 +341,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                    System.out.println(device.getAddress()+"1!!");
 
                     final String selfAddress = bluetoothAdapter.getAddress();
-
+//                    final String name = device.getName().substring(0,3);
+////                    final String mess = name + message;
+//
+//                    System.out.println("340768654"+mess);
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -386,7 +392,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         ParcelUuid parcelUuid = new ParcelUuid(serviceUUID);
 
-        int maxLength = bluetoothAdapter.getLeMaximumAdvertisingDataLength();
+
 
         System.out.println("Max data length for device: " + Integer.toString(maxLength));
 
@@ -422,6 +428,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void sendMessage(String message) {
+        String name = bluetoothAdapter.getName().substring(0,3);
+
+
+        String mess = name+message;
         for (BluetoothGatt connectedGatt : connectedGatts) {
             System.out.println("Services gotten: ");
             System.out.println(connectedGatt.getServices());
@@ -430,7 +440,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (service != null) {
                 BluetoothGattCharacteristic characteristic = service.getCharacteristic(charUUID);
                 System.out.println("Sending message: " + message);
-                byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
+                byte[] messageBytes = mess.getBytes(StandardCharsets.UTF_8);
                 characteristic.setValue(messageBytes);
 
                 boolean success = connectedGatt.writeCharacteristic(characteristic);
@@ -442,7 +452,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 System.out.println("Service is null!!!!");
             }
         }
-        md.addMessage(new Message(message,"na",true));
+        md.addMessage(new Message(mess,"na",true ));
     }
 
     @Override

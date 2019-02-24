@@ -4,9 +4,13 @@ public class Message {
     String text;
     String address;
     boolean ownMessage;
+    String name;
+    String message;
 
     public Message(String text, String address, boolean ownMessage){
-        this.text = text;
+        this.text= text;
+        this.name = text.substring(0,3);
+        this.message = text.substring(3);
         this.address = address;
         this.ownMessage = ownMessage;
     }

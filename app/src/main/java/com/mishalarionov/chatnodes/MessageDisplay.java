@@ -50,7 +50,7 @@ public class MessageDisplay extends BaseAdapter {
             convertView = messageInflater.inflate(R.layout.my_message, null);
             holder.messageBody = (TextView) convertView.findViewById(R.id.message_body);
             convertView.setTag(holder);
-            holder.messageBody.setText(message.text);
+            holder.messageBody.setText(message.message);
         } else { // this message was sent by someone else so let's create an advanced chat bubble on the left
             convertView = messageInflater.inflate(R.layout.their_message, null);
             holder.avatar = (View) convertView.findViewById(R.id.avatar);
@@ -58,8 +58,8 @@ public class MessageDisplay extends BaseAdapter {
             holder.messageBody = (TextView) convertView.findViewById(R.id.message_body);
             convertView.setTag(holder);
 
-            holder.name.setText(message.address);
-            holder.messageBody.setText(message.text);
+            holder.name.setText(message.name);
+            holder.messageBody.setText(message.message);
             GradientDrawable drawable = (GradientDrawable) holder.avatar.getBackground();
             drawable.setColor(Color.parseColor(message.getColor()));
         }
